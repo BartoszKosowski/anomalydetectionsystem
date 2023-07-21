@@ -4,6 +4,8 @@ import tensorflow as tf
 from argparse import ArgumentParser, FileType
 from configparser import ConfigParser
 from confluent_kafka import Consumer, OFFSET_BEGINNING
+from MongoDbClient import MongoDbClient
+from datetime import datetime
 
 if __name__ == '__main__':
     parser = ArgumentParser()
@@ -18,6 +20,7 @@ if __name__ == '__main__':
 
     # Consumer
     consumer = Consumer(config)
+    client = MongoDbClient('ann_recognised_samples')
 
     # Callback
     def reset_offset(consumer, partitions):
@@ -49,6 +52,11 @@ if __name__ == '__main__':
                     df = pd.DataFrame(full_sample)
                     data = np.transpose(df.values)
                     result = ann_model.predict(data)
+                    client.insert_record({
+                        'sample_id': int(key),
+                        'predicted_value': float(result[0][0]),
+                        'timestamp': str(datetime.now())
+                    })
                     full_sample = []
     except KeyboardInterrupt:
         pass

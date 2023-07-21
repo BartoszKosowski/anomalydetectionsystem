@@ -41,10 +41,11 @@ if __name__ == '__main__':
                 timestamp = sample_duration/140
                 if np.random.normal(0.5, 0.5) > ANOMALY_RATIO:
                     sample = normal_ecg_generator.predict(np.random.normal(0, 1, size=(1, 140)))
-                    producer.produce(topic='sample_details', key=str(sample_id), value=str(0))
+                    producer.produce(topic='sample_details', key=str(sample_id), value='1')
+                    print("True")
                 else:
                     sample = anomalous_ecg_generator.predict(np.random.normal(0, 1, size=(1, 140)))
-                    producer.produce(topic='sample_details', key=str(sample_id), value=str(1))
+                    producer.produce(topic='sample_details', key=str(sample_id), value='0')
                 for i in sample[0]:
                     producer.produce(topic='ecg', key=str(sample_id), value=str(i), callback=delivery_callback)
                     sleep(timestamp)

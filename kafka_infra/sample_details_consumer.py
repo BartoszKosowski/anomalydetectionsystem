@@ -1,6 +1,3 @@
-import numpy as np
-import pandas as pd
-import tensorflow as tf
 from argparse import ArgumentParser, FileType
 from configparser import ConfigParser
 from confluent_kafka import Consumer, OFFSET_BEGINNING
@@ -20,7 +17,8 @@ if __name__ == '__main__':
 
     # Consumer
     consumer = Consumer(config)
-    client = MongoDbClient('autoencoder_recognised_samples')
+
+    client = MongoDbClient('generated_samples')
 
     # Callback
     def reset_offset(consumer, partitions):
@@ -29,9 +27,8 @@ if __name__ == '__main__':
                 p.offset = OFFSET_BEGINNING
             consumer.assign(partitions)
 
-    consumer.subscribe(topics=['ecg'], on_assign=reset_offset)
+    consumer.subscribe(topics=['sample_details'], on_assign=reset_offset)
 
-    autoencoder_model = tf.keras.models.load_model('../models/detectors/ann')
 
     try:
         full_sample = []
@@ -46,18 +43,11 @@ if __name__ == '__main__':
             else:
                 key = msg.key().decode('utf-8')
                 value = msg.value().decode('utf-8')
-                if len(full_sample) < 140:
-                    full_sample.append(float(value))
-                else:
-                    df = pd.DataFrame(full_sample)
-                    data = np.transpose(df.values)
-                    result = autoencoder_model.predict(data)
-                    client.insert_record({
-                        'sample_id': int(key),
-                        'predicted_value': float(result[0][0]),
-                        'timestamp': str(datetime.now())
-                    })
-                    full_sample = []
+                client.insert_record({"sample_id": int(key),
+                                      "normal_data": int(value),
+                                      "timestamp": str(datetime.now())
+                                      })
+                print('Record has been added')
     except KeyboardInterrupt:
         pass
     finally:

@@ -1,11 +1,15 @@
+from datetime import datetime
+
 import numpy as np
 import pandas as pd
 import tensorflow as tf
 from argparse import ArgumentParser, FileType
 from configparser import ConfigParser
 from confluent_kafka import Consumer, OFFSET_BEGINNING
+from sklearn import svm
+from sklearn.model_selection import train_test_split
 from MongoDbClient import MongoDbClient
-from datetime import datetime
+
 
 if __name__ == '__main__':
     parser = ArgumentParser()
@@ -18,9 +22,26 @@ if __name__ == '__main__':
     config = dict(config_parser['default'])
     config.update(config_parser['consumer'])
 
+    def prepare_model():
+        dataframe = pd.read_csv('../dataset/ecg.csv', header=None)
+        raw_data = dataframe.values
+
+        # get last element
+        labels = raw_data[:, -1]
+
+        # rest are data
+        data = raw_data[:, 0:-1]
+
+        train_data, test_data, train_labels, test_labels = train_test_split(data, labels, test_size=0.2, random_state=21)
+
+        clf = svm.SVC(gamma='auto', decision_function_shape='ovo', class_weight='balanced')
+        clf.fit(train_data, train_labels)
+
+        return clf
+
     # Consumer
     consumer = Consumer(config)
-    client = MongoDbClient('autoencoder_recognised_samples')
+    client = MongoDbClient('svm_recognized_samples')
 
     # Callback
     def reset_offset(consumer, partitions):
@@ -31,7 +52,7 @@ if __name__ == '__main__':
 
     consumer.subscribe(topics=['ecg'], on_assign=reset_offset)
 
-    autoencoder_model = tf.keras.models.load_model('../models/detectors/ann')
+    clf = prepare_model()
 
     try:
         full_sample = []
@@ -51,12 +72,13 @@ if __name__ == '__main__':
                 else:
                     df = pd.DataFrame(full_sample)
                     data = np.transpose(df.values)
-                    result = autoencoder_model.predict(data)
+                    result = clf.predict(data)
                     client.insert_record({
                         'sample_id': int(key),
                         'predicted_value': float(result[0][0]),
                         'timestamp': str(datetime.now())
                     })
+                    print(result)
                     full_sample = []
     except KeyboardInterrupt:
         pass
