@@ -1,14 +1,12 @@
-from datetime import datetime
-
 import numpy as np
 import pandas as pd
-import tensorflow as tf
 from argparse import ArgumentParser, FileType
 from configparser import ConfigParser
 from confluent_kafka import Consumer, OFFSET_BEGINNING
 from sklearn import svm
 from sklearn.model_selection import train_test_split
 from MongoDbClient import MongoDbClient
+from datetime import datetime
 
 
 if __name__ == '__main__':
@@ -75,7 +73,7 @@ if __name__ == '__main__':
                     result = clf.predict(data)
                     client.insert_record({
                         'sample_id': int(key),
-                        'predicted_value': float(result[0][0]),
+                        'predicted_value': float(result[0]),
                         'timestamp': str(datetime.now())
                     })
                     print(result)
