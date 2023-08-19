@@ -1,6 +1,7 @@
 from configparser import ConfigParser
 from argparse import ArgumentParser, FileType
 import numpy as np
+import scipy
 import tensorflow as tf
 from time import sleep
 from confluent_kafka import Producer
@@ -19,6 +20,15 @@ if __name__ == '__main__':
 
     # Initialize the ECG producer
     producer = Producer(config)
+
+    def filter_data(generated_data):
+        dataset = []
+
+        for sample in generated_data:
+            filtered_generated_sample = []
+            filtered_generated_sample = np.append(filtered_generated_sample, scipy.signal.wiener(sample, 15))
+            dataset.append(filtered_generated_sample)
+        return dataset
 
     def delivery_callback(err, msg):
         key = msg.key().decode('utf-8')
@@ -46,12 +56,18 @@ if __name__ == '__main__':
                 else:
                     sample = anomalous_ecg_generator.predict(np.random.normal(0, 1, size=(1, 140)))
                     producer.produce(topic='sample_details', key=str(sample_id), value='0')
+
+                filter_data(sample)
+
                 for i in sample[0]:
                     producer.produce(topic='ecg', key=str(sample_id), value=str(i), callback=delivery_callback)
-                    sleep(timestamp)
+                    # sleep(timestamp)
                 sample_id += 1
                 producer.poll(10000)
                 producer.flush()
+
+                if sample_id == 1001:
+                    break
         except KeyboardInterrupt:
             pass
         finally:

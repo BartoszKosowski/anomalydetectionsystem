@@ -20,7 +20,7 @@ if __name__ == '__main__':
 
     # Consumer
     consumer = Consumer(config)
-    client = MongoDbClient('ann_recognised_samples')
+    client = MongoDbClient('ann_recognized_samples')
 
     # Callback
     def reset_offset(consumer, partitions):
@@ -49,12 +49,23 @@ if __name__ == '__main__':
                 if len(full_sample) < 140:
                     full_sample.append(float(value))
                 else:
+                    start_time = datetime.now()
                     df = pd.DataFrame(full_sample)
                     data = np.transpose(df.values)
                     result = ann_model.predict(data)
+                    duration = int((datetime.now() - start_time).total_seconds()*1000)
+                    if result < 0.2:
+                        estimation = 'anomaly'
+                    elif result < 0.4:
+                        estimation = 'probably_anomaly'
+                    elif result < 0.8:
+                        estimation = 'probably_normal'
+                    else:
+                        estimation = 'normal'
                     client.insert_record({
-                        'sample_id': int(key),
+                        'sample_id': int(key)-1,
                         'predicted_value': float(result[0][0]),
+                        'duration': duration,
                         'timestamp': str(datetime.now())
                     })
                     full_sample = []

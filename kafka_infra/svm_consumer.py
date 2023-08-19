@@ -21,7 +21,7 @@ if __name__ == '__main__':
     config.update(config_parser['consumer'])
 
     def prepare_model():
-        dataframe = pd.read_csv('../dataset/ecg.csv', header=None)
+        dataframe = pd.read_csv('../dataset/ecg_2.csv', header=None)
         raw_data = dataframe.values
 
         # get last element
@@ -68,12 +68,15 @@ if __name__ == '__main__':
                 if len(full_sample) < 140:
                     full_sample.append(float(value))
                 else:
+                    start_time = datetime.now()
                     df = pd.DataFrame(full_sample)
                     data = np.transpose(df.values)
-                    result = clf.predict(data)
+                    result = clf.decision_function(data)
+                    duration = int((datetime.now() - start_time).total_seconds()*1000)
                     client.insert_record({
-                        'sample_id': int(key),
+                        'sample_id': int(key)-1,
                         'predicted_value': float(result[0]),
+                        'duration': duration,
                         'timestamp': str(datetime.now())
                     })
                     print(result)

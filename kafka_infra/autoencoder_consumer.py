@@ -20,7 +20,7 @@ if __name__ == '__main__':
 
     # Consumer
     consumer = Consumer(config)
-    client = MongoDbClient('autoencoder_recognised_samples')
+    client = MongoDbClient('autoencoder_recognized_samples')
 
     # Callback
     def reset_offset(consumer, partitions):
@@ -31,7 +31,16 @@ if __name__ == '__main__':
 
     consumer.subscribe(topics=['ecg'], on_assign=reset_offset)
 
-    autoencoder_model = tf.keras.models.load_model('../models/detectors/ann')
+    autoencoder_model = tf.keras.models.load_model('../models/detectors/autoencoder')
+
+    def mean_squared_error(y, y_pred):
+        # Calculate the squared errors
+        squared_errors = (y - y_pred) ** 2
+
+        # Mean of the sum of squared errors
+        mse = np.mean(squared_errors)
+
+        return mse
 
     try:
         full_sample = []
@@ -49,12 +58,18 @@ if __name__ == '__main__':
                 if len(full_sample) < 140:
                     full_sample.append(float(value))
                 else:
+                    start_time = datetime.now()
                     df = pd.DataFrame(full_sample)
-                    data = np.transpose(df.values)
-                    result = autoencoder_model.predict(data)
+                    input_data = np.transpose(df.values)
+                    output_data = autoencoder_model.predict(input_data)
+                    result = mean_squared_error(input_data, output_data)
+                    duration = int((datetime.now() - start_time).total_seconds()*1000)
+                    print(result)
+
                     client.insert_record({
-                        'sample_id': int(key),
-                        'predicted_value': float(result[0][0]),
+                        'sample_id': int(key)-1,
+                        'predicted_value': float(result),
+                        'duration': duration,
                         'timestamp': str(datetime.now())
                     })
                     full_sample = []
