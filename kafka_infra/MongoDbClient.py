@@ -19,3 +19,6 @@ class MongoDbClient:
     def insert_many_records(self, records_list):
         callback = self.collection.insert_many(records_list)
         return callback.inserted_ids
+
+    def aggregate(self, pipline):
+        return self.collection.aggregate(pipline)
