@@ -20,7 +20,7 @@ if __name__ == '__main__':
 
     # Consumer
     consumer = Consumer(config)
-    client = MongoDbClient('ann_recognized_samples')
+    client = MongoDbClient('ann_recognized_samples_st')
 
     # Callback
     def reset_offset(consumer, partitions):
@@ -31,7 +31,7 @@ if __name__ == '__main__':
 
     consumer.subscribe(topics=['ecg'], on_assign=reset_offset)
 
-    ann_model = tf.keras.models.load_model('../models/detectors/ann')
+    ann_model = tf.keras.models.load_model('../models/detectors/ann_10k')
 
     try:
         full_sample = []
@@ -54,14 +54,6 @@ if __name__ == '__main__':
                     data = np.transpose(df.values)
                     result = ann_model.predict(data)
                     duration = int((datetime.now() - start_time).total_seconds()*1000)
-                    if result < 0.2:
-                        estimation = 'anomaly'
-                    elif result < 0.4:
-                        estimation = 'probably_anomaly'
-                    elif result < 0.8:
-                        estimation = 'probably_normal'
-                    else:
-                        estimation = 'normal'
                     client.insert_record({
                         'sample_id': int(key)-1,
                         'predicted_value': float(result[0][0]),

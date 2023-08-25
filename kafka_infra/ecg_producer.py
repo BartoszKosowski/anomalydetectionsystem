@@ -44,15 +44,15 @@ if __name__ == '__main__':
         normal_ecg_generator = tf.keras.models.load_model('../models/generators/normal_ecg_generator')
 
         sample_id = 0
+        np.random.seed(256)
         try:
-            default_sample_duration = np.random.uniform(0.7, 1.1)
+            # default_sample_duration = np.random.uniform(0.7, 1.1)
             while True:
-                sample_duration = np.random.normal(default_sample_duration, 0.1)
-                timestamp = sample_duration/140
+                # sample_duration = np.random.normal(default_sample_duration, 0.1)
+                # timestamp = sample_duration/140
                 if np.random.normal(0.5, 0.5) > ANOMALY_RATIO:
                     sample = normal_ecg_generator.predict(np.random.normal(0, 1, size=(1, 140)))
                     producer.produce(topic='sample_details', key=str(sample_id), value='1')
-                    print("True")
                 else:
                     sample = anomalous_ecg_generator.predict(np.random.normal(0, 1, size=(1, 140)))
                     producer.produce(topic='sample_details', key=str(sample_id), value='0')
@@ -66,7 +66,7 @@ if __name__ == '__main__':
                 producer.poll(10000)
                 producer.flush()
 
-                if sample_id == 1001:
+                if sample_id == 1401:
                     break
         except KeyboardInterrupt:
             pass

@@ -21,7 +21,7 @@ if __name__ == '__main__':
     config.update(config_parser['consumer'])
 
     def prepare_model():
-        dataframe = pd.read_csv('../dataset/ecg_2.csv', header=None)
+        dataframe = pd.read_csv('../dataset/ecg_prod_50k.csv', header=None)
         raw_data = dataframe.values
 
         # get last element
@@ -32,14 +32,14 @@ if __name__ == '__main__':
 
         train_data, test_data, train_labels, test_labels = train_test_split(data, labels, test_size=0.2, random_state=21)
 
-        clf = svm.SVC(gamma='auto', decision_function_shape='ovo', class_weight='balanced')
+        clf = svm.SVC(gamma=1, C=0.1)
         clf.fit(train_data, train_labels)
 
         return clf
 
     # Consumer
     consumer = Consumer(config)
-    client = MongoDbClient('svm_recognized_samples')
+    client = MongoDbClient('svm_recognized_samples_st')
 
     # Callback
     def reset_offset(consumer, partitions):

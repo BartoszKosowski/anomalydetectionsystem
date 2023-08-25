@@ -20,7 +20,7 @@ if __name__ == '__main__':
 
     # Consumer
     consumer = Consumer(config)
-    client = MongoDbClient('autoencoder_recognized_samples')
+    client = MongoDbClient('autoencoder_recognized_samples_st')
 
     # Callback
     def reset_offset(consumer, partitions):
@@ -31,7 +31,7 @@ if __name__ == '__main__':
 
     consumer.subscribe(topics=['ecg'], on_assign=reset_offset)
 
-    autoencoder_model = tf.keras.models.load_model('../models/detectors/autoencoder')
+    autoencoder_model = tf.keras.models.load_model('../models/detectors/autoencoder_10k')
 
     def mean_squared_error(y, y_pred):
         # Calculate the squared errors
