@@ -20,7 +20,7 @@ if __name__ == '__main__':
 
     # Consumer
     consumer = Consumer(config)
-    client = MongoDbClient('ann_recognized_samples_st')
+    client = MongoDbClient('ann_recognized_samples_signal')
 
     # Callback
     def reset_offset(consumer, partitions):
@@ -31,7 +31,7 @@ if __name__ == '__main__':
 
     consumer.subscribe(topics=['ecg'], on_assign=reset_offset)
 
-    ann_model = tf.keras.models.load_model('../models/detectors/ann_10k')
+    ann_model = tf.keras.models.load_model('../models/detectors/ann_signal')
 
     try:
         full_sample = []
@@ -46,7 +46,7 @@ if __name__ == '__main__':
             else:
                 key = msg.key().decode('utf-8')
                 value = msg.value().decode('utf-8')
-                if len(full_sample) < 140:
+                if len(full_sample) < 100:
                     full_sample.append(float(value))
                 else:
                     start_time = datetime.now()

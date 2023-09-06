@@ -18,7 +18,7 @@ if __name__ == '__main__':
     # Consumer
     consumer = Consumer(config)
 
-    client = MongoDbClient('generated_samples_st')
+    client = MongoDbClient('generated_samples_signal')
 
     # Callback
     def reset_offset(consumer, partitions):

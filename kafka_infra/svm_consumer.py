@@ -21,7 +21,7 @@ if __name__ == '__main__':
     config.update(config_parser['consumer'])
 
     def prepare_model():
-        dataframe = pd.read_csv('../dataset/ecg_prod_50k.csv', header=None)
+        dataframe = pd.read_csv('../dataset/signal_25k.csv', header=None)
         raw_data = dataframe.values
 
         # get last element
@@ -39,7 +39,7 @@ if __name__ == '__main__':
 
     # Consumer
     consumer = Consumer(config)
-    client = MongoDbClient('svm_recognized_samples_st')
+    client = MongoDbClient('svm_recognized_samples_signal')
 
     # Callback
     def reset_offset(consumer, partitions):
@@ -65,7 +65,7 @@ if __name__ == '__main__':
             else:
                 key = msg.key().decode('utf-8')
                 value = msg.value().decode('utf-8')
-                if len(full_sample) < 140:
+                if len(full_sample) < 100:
                     full_sample.append(float(value))
                 else:
                     start_time = datetime.now()
